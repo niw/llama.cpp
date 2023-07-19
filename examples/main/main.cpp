@@ -198,10 +198,27 @@ int main(int argc, char ** argv) {
     std::vector<llama_token> embd_inp;
 
     // Add a space in front of the first character to match OG llama tokenizer behavior
-    params.prompt.insert(0, 1, ' ');
+    //params.prompt.insert(0, 1, ' ');
 
     if (params.interactive_first || params.instruct || !params.prompt.empty() || session_tokens.empty()) {
-        embd_inp = ::llama_tokenize(ctx, params.prompt, true);
+        //embd_inp = ::llama_tokenize(ctx, params.prompt, true);
+        unsigned long s = 0;
+        unsigned long e = 0;
+        while (true) {
+            e = params.prompt.find('\n', s);
+            if (e == std::string::npos) {
+                e = params.prompt.size() - 1;
+            }
+            std::string line = params.prompt.substr(s, e - s + 1);
+            std::vector<llama_token> tokens = llama_tokenize(ctx, line, true);
+            embd_inp.insert(embd_inp.end(), tokens.begin(), tokens.end());
+            // eos token id is 2
+            embd_inp.push_back(2);
+            s = e + 1;
+            if (s >= params.prompt.size()) {
+                break;
+            }
+        }
     } else {
         embd_inp = session_tokens;
     }
@@ -211,7 +228,7 @@ int main(int argc, char ** argv) {
     int guidance_offset = 0;
     int original_prompt_len = 0;
     if (ctx_guidance) {
-        params.cfg_negative_prompt.insert(0, 1, ' ');
+        //params.cfg_negative_prompt.insert(0, 1, ' ');
         guidance_inp = ::llama_tokenize(ctx_guidance, params.cfg_negative_prompt, true);
 
         std::vector<llama_token> original_inp = ::llama_tokenize(ctx, params.prompt, true);
@@ -261,13 +278,13 @@ int main(int argc, char ** argv) {
     }
 
     // prefix & suffix for instruct mode
-    const auto inp_pfx = ::llama_tokenize(ctx, "\n\n### Instruction:\n\n", true);
-    const auto inp_sfx = ::llama_tokenize(ctx, "\n\n### Response:\n\n", false);
+    const auto inp_pfx = ::llama_tokenize(ctx, "[INST]", true);
+    const auto inp_sfx = ::llama_tokenize(ctx, "[/INST]", false);
 
     // in instruct mode, we inject a prefix and a suffix to each input by the user
     if (params.instruct) {
         params.interactive_first = true;
-        params.antiprompt.push_back("### Instruction:\n\n");
+        params.antiprompt.push_back("[INST]");
     }
 
     // enable interactive mode if interactive start is specified

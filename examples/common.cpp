@@ -147,9 +147,9 @@ bool gpt_params_parse(int argc, char ** argv, gpt_params & params) {
                 break;
             }
             std::copy(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>(), back_inserter(params.prompt));
-            if (params.prompt.back() == '\n') {
-                params.prompt.pop_back();
-            }
+//            if (params.prompt.back() == '\n') {
+//                params.prompt.pop_back();
+//            }
         } else if (arg == "-n" || arg == "--n-predict") {
             if (++i >= argc) {
                 invalid_param = true;
