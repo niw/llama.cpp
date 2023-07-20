@@ -205,16 +205,15 @@ int main(int argc, char ** argv) {
         unsigned long s = 0;
         unsigned long e = 0;
         while (true) {
-            e = params.prompt.find('\n', s);
+            e = params.prompt.find(";\n", s);
             if (e == std::string::npos) {
                 e = params.prompt.size() - 1;
             }
-            std::string line = params.prompt.substr(s, e - s + 1);
+            std::string line = params.prompt.substr(s, e - s + 2);
             std::vector<llama_token> tokens = llama_tokenize(ctx, line, true);
             embd_inp.insert(embd_inp.end(), tokens.begin(), tokens.end());
-            // eos token id is 2
-            embd_inp.push_back(2);
-            s = e + 1;
+            embd_inp.push_back(llama_token_eos());
+            s = e + 2;
             if (s >= params.prompt.size()) {
                 break;
             }
@@ -278,13 +277,13 @@ int main(int argc, char ** argv) {
     }
 
     // prefix & suffix for instruct mode
-    const auto inp_pfx = ::llama_tokenize(ctx, "[INST]", true);
-    const auto inp_sfx = ::llama_tokenize(ctx, "[/INST]", false);
+    const auto inp_pfx = ::llama_tokenize(ctx, "\n[INST]", true);
+    const auto inp_sfx = ::llama_tokenize(ctx, "[/INST]\n", false);
 
     // in instruct mode, we inject a prefix and a suffix to each input by the user
     if (params.instruct) {
         params.interactive_first = true;
-        params.antiprompt.push_back("[INST]");
+        params.antiprompt.push_back("\n[INST]");
     }
 
     // enable interactive mode if interactive start is specified
